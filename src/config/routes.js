@@ -1,8 +1,8 @@
-import Home from '../pages/Home';
-import Dashboard from '../pages/Dashboard';
-import Leads from '../pages/Leads';
-import AddLead from '../pages/AddLead';
-import Pipeline from '../pages/Pipeline';
+import HomePage from '@/components/pages/HomePage';
+import DashboardPage from '@/components/pages/DashboardPage';
+import LeadsPage from '@/components/pages/LeadsPage';
+import AddLeadPage from '@/components/pages/AddLeadPage';
+import PipelinePage from '@/components/pages/PipelinePage';
 
 export const routes = {
   home: {
@@ -10,35 +10,35 @@ export const routes = {
     label: 'Home',
     path: '/',
     icon: 'Home',
-    component: Home
+component: HomePage
   },
   dashboard: {
     id: 'dashboard',
     label: 'Dashboard',
     path: '/dashboard',
     icon: 'BarChart3',
-    component: Dashboard
+component: DashboardPage
   },
   leads: {
     id: 'leads',
     label: 'Leads',
     path: '/leads',
     icon: 'Users',
-    component: Leads
+component: LeadsPage
   },
   addLead: {
     id: 'addLead',
     label: 'Add Lead',
     path: '/add-lead',
     icon: 'UserPlus',
-    component: AddLead
+component: AddLeadPage
   },
   pipeline: {
     id: 'pipeline',
     label: 'Pipeline',
     path: '/pipeline',
     icon: 'GitBranch',
-    component: Pipeline
+component: PipelinePage
   }
 };
 

@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import Layout from './Layout';
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import Leads from './pages/Leads';
-import AddLead from './pages/AddLead';
-import Pipeline from './pages/Pipeline';
-import NotFound from './pages/NotFound';
+import HomePage from '@/components/pages/HomePage';
+import DashboardPage from '@/components/pages/DashboardPage';
+import LeadsPage from '@/components/pages/LeadsPage';
+import AddLeadPage from '@/components/pages/AddLeadPage';
+import PipelinePage from '@/components/pages/PipelinePage';
+import NotFoundPage from '@/components/pages/NotFoundPage';
 
 function App() {
   return (
@@ -14,12 +14,12 @@ function App() {
       <div className="min-h-screen bg-white">
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="leads" element={<Leads />} />
-            <Route path="add-lead" element={<AddLead />} />
-            <Route path="pipeline" element={<Pipeline />} />
-            <Route path="*" element={<NotFound />} />
+<Route index element={<HomePage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="leads" element={<LeadsPage />} />
+            <Route path="add-lead" element={<AddLeadPage />} />
+            <Route path="pipeline" element={<PipelinePage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
         
