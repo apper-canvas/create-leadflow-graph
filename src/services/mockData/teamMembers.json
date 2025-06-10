@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1",
+    "name": "Alex Rivera",
+    "email": "alex.rivera@leadflow.com",
+    "role": "Senior Sales Manager"
+  },
+  {
+    "id": "2",
+    "name": "Jordan Smith",
+    "email": "jordan.smith@leadflow.com",
+    "role": "Sales Representative"
+  },
+  {
+    "id": "3",
+    "name": "Casey Park",
+    "email": "casey.park@leadflow.com",
+    "role": "Business Development Manager"
+  },
+  {
+    "id": "4",
+    "name": "Taylor Wilson",
+    "email": "taylor.wilson@leadflow.com",
+    "role": "Account Executive"
+  }
+]
