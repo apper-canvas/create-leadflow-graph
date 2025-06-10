@@ -1,45 +1,49 @@
 import HomePage from '@/components/pages/HomePage';
 import DashboardPage from '@/components/pages/DashboardPage';
 import LeadsPage from '@/components/pages/LeadsPage';
-import AddLeadPage from '@/components/pages/AddLeadPage';
 import PipelinePage from '@/components/pages/PipelinePage';
+import AddLeadPage from '@/components/pages/AddLeadPage';
+import NotFoundPage from '@/components/pages/NotFoundPage';
 
-export const routes = {
-  home: {
-    id: 'home',
-    label: 'Home',
+export const routes = [
+  {
     path: '/',
-    icon: 'Home',
-component: HomePage
+    component: HomePage,
+    title: 'Home',
+    showInNav: true,
+    icon: 'Home'
   },
-  dashboard: {
-    id: 'dashboard',
-    label: 'Dashboard',
+{
     path: '/dashboard',
-    icon: 'BarChart3',
-component: DashboardPage
+    component: DashboardPage,
+    title: 'Dashboard',
+    showInNav: true,
   },
-  leads: {
-    id: 'leads',
-    label: 'Leads',
+  {
     path: '/leads',
-    icon: 'Users',
-component: LeadsPage
+    component: LeadsPage,
+    title: 'Leads',
+    showInNav: true,
+    icon: 'Users'
   },
-  addLead: {
-    id: 'addLead',
-    label: 'Add Lead',
+  {
     path: '/add-lead',
-    icon: 'UserPlus',
-component: AddLeadPage
+    component: AddLeadPage,
+    title: 'Add Lead',
+    showInNav: false
   },
-  pipeline: {
-    id: 'pipeline',
-    label: 'Pipeline',
-    path: '/pipeline',
-    icon: 'GitBranch',
-component: PipelinePage
+  {
+    path: '/leads/:id',
+    component: () => <div>Lead Details Page - Timeline component would be here</div>,
+    title: 'Lead Details',
+    showInNav: false
+  },
+  {
+    path: '*',
+    component: NotFoundPage,
+    title: 'Not Found',
+    showInNav: false
   }
-};
+];
 
-export const routeArray = Object.values(routes);
+export default routes;

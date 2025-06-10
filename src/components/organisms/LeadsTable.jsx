@@ -174,18 +174,19 @@ const LeadsTable = ({ leads, teamMembers, onUpdateStatus, onAssignLead, onDelete
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+<tbody className="bg-white divide-y divide-gray-200">
                 {currentLeads.map((lead, index) => (
                   <motion.tr
                     key={lead.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => window.location.href = `/leads/${lead.id}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                        <div className="text-sm font-medium text-gray-900 hover:text-primary transition-colors">{lead.name}</div>
                         <div className="text-sm text-gray-500">{lead.phone}</div>
                       </div>
                     </td>

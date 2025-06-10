@@ -4,8 +4,7 @@ import ApperIcon from '@/components/ApperIcon';
 import PipelineColumnHeader from '@/components/molecules/PipelineColumnHeader';
 import LeadCard from '@/components/molecules/LeadCard';
 import { PIPELINE_STATUS_COLUMNS } from '@/config/constants';
-
-const PipelineBoard = ({ leads, teamMembers, onUpdateLeadStatus }) => {
+const PipelineBoard = ({ leads, teamMembers, onUpdateLeadStatus, onLeadClick }) => {
   const [draggedLead, setDraggedLead] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
 
@@ -66,7 +65,7 @@ const PipelineBoard = ({ leads, teamMembers, onUpdateLeadStatus }) => {
 
             <div className="p-4 space-y-3 min-h-[500px]">
               <AnimatePresence>
-                {columnLeads.map((lead, index) => (
+{columnLeads.map((lead, index) => (
                   <LeadCard
                     key={lead.id}
                     lead={lead}
@@ -74,6 +73,7 @@ const PipelineBoard = ({ leads, teamMembers, onUpdateLeadStatus }) => {
                     onDragStart={handleDragStart}
                     isDragged={draggedLead?.id === lead.id}
                     index={index}
+                    onLeadClick={onLeadClick}
                   />
                 ))}
               </AnimatePresence>

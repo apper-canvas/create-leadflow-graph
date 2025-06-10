@@ -3,8 +3,16 @@ import { motion } from 'framer-motion';
 import ApperIcon from '@/components/ApperIcon';
 import StatusBadge from '@/components/molecules/StatusBadge';
 import { format } from 'date-fns';
+const LeadCard = ({ lead, getTeamMemberName, onDragStart, isDragged, index, onLeadClick }) => {
+    const handleCardClick = (e) => {
+        // Prevent navigation if dragging
+        if (e.defaultPrevented || isDragged) return;
+        
+        if (onLeadClick) {
+            onLeadClick(lead.id);
+        }
+    };
 
-const LeadCard = ({ lead, getTeamMemberName, onDragStart, isDragged, index }) => {
     return (
         <motion.div
             key={lead.id}
@@ -14,6 +22,7 @@ const LeadCard = ({ lead, getTeamMemberName, onDragStart, isDragged, index }) =>
             transition={{ delay: index * 0.05 }}
             draggable
             onDragStart={(e) => onDragStart(e, lead)}
+            onClick={handleCardClick}
             className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${
                 isDragged ? 'opacity-50' : ''
             }`}
