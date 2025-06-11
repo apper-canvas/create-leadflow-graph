@@ -1,10 +1,10 @@
-// ApperClient service for leads
+// ApperClient service for opportunities
 import { toast } from 'react-toastify';
 
 // Utility function to simulate API delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-class LeadService {
+class OpportunityService {
   constructor() {
     // Initialize ApperClient
     const { ApperClient } = window.ApperSDK;
@@ -12,16 +12,15 @@ class LeadService {
       apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
-    this.tableName = 'lead';
+    this.tableName = 'opportunity';
   }
 
   async getAll(filters = {}) {
     try {
-      // Define updateable fields for lead table
+      // Define fields for opportunity table
       const fields = [
         'Id', 'Name', 'Tags', 'Owner', 'CreatedOn', 'CreatedBy', 'ModifiedOn', 'ModifiedBy',
-        'email', 'phone', 'company', 'lead_source', 'status', 'assigned_to', 'notes',
-        'created_at', 'updated_at', 'follow_up_date'
+        'Stage', 'Amount', 'CloseDate', 'LeadSource', 'Description'
       ];
 
       const params = {
@@ -40,11 +39,11 @@ class LeadService {
       };
 
       // Apply filters
-      if (filters.status) {
+      if (filters.stage) {
         params.where.push({
-          fieldName: "status",
+          fieldName: "Stage",
           operator: "ExactMatch",
-          values: [filters.status]
+          values: [filters.stage]
         });
       }
 
@@ -61,12 +60,12 @@ class LeadService {
                     values: [filters.search]
                   },
                   {
-                    fieldName: "email",
+                    fieldName: "Description",
                     operator: "Contains",
                     values: [filters.search]
                   },
                   {
-                    fieldName: "company",
+                    fieldName: "LeadSource",
                     operator: "Contains",
                     values: [filters.search]
                   }
@@ -76,14 +75,6 @@ class LeadService {
             ]
           }
         ];
-      }
-
-      if (filters.assigned_to) {
-        params.where.push({
-          fieldName: "assigned_to",
-          operator: "ExactMatch",
-          values: [filters.assigned_to]
-        });
       }
 
       const response = await this.apperClient.fetchRecords(this.tableName, params);
@@ -101,8 +92,8 @@ class LeadService {
         totalPages: Math.ceil((response.totalRecords || 0) / (filters.limit || 20))
       };
     } catch (error) {
-      console.error("Error fetching leads:", error);
-      toast.error("Failed to fetch leads");
+      console.error("Error fetching opportunities:", error);
+      toast.error("Failed to fetch opportunities");
       return { data: [], total: 0, page: 1, totalPages: 0 };
     }
   }
@@ -111,8 +102,7 @@ class LeadService {
     try {
       const fields = [
         'Id', 'Name', 'Tags', 'Owner', 'CreatedOn', 'CreatedBy', 'ModifiedOn', 'ModifiedBy',
-        'email', 'phone', 'company', 'lead_source', 'status', 'assigned_to', 'notes',
-        'created_at', 'updated_at', 'follow_up_date'
+        'Stage', 'Amount', 'CloseDate', 'LeadSource', 'Description'
       ];
 
       const params = { fields };
@@ -126,27 +116,24 @@ class LeadService {
 
       return response.data;
     } catch (error) {
-      console.error(`Error fetching lead with ID ${id}:`, error);
-      toast.error("Failed to fetch lead");
+      console.error(`Error fetching opportunity with ID ${id}:`, error);
+      toast.error("Failed to fetch opportunity");
       return null;
     }
   }
 
-  async create(leadData) {
+  async create(opportunityData) {
     try {
       // Only include updateable fields for create operation
       const updateableFields = {
-        Name: leadData.Name,
-        Tags: leadData.Tags,
-        Owner: leadData.Owner,
-        email: leadData.email,
-        phone: leadData.phone,
-        company: leadData.company,
-        lead_source: leadData.lead_source,
-        status: leadData.status || 'New',
-        assigned_to: leadData.assigned_to,
-        notes: leadData.notes,
-        follow_up_date: leadData.follow_up_date
+        Name: opportunityData.Name,
+        Tags: opportunityData.Tags,
+        Owner: opportunityData.Owner,
+        Stage: opportunityData.Stage || 'Prospecting',
+        Amount: opportunityData.Amount,
+        CloseDate: opportunityData.CloseDate,
+        LeadSource: opportunityData.LeadSource,
+        Description: opportunityData.Description
       };
 
       // Remove undefined fields
@@ -183,25 +170,25 @@ class LeadService {
         }
 
         if (successfulRecords.length > 0) {
-          toast.success("Lead created successfully");
+          toast.success("Opportunity created successfully");
           return successfulRecords[0].data;
         }
       }
 
       return null;
     } catch (error) {
-      console.error("Error creating lead:", error);
-      toast.error("Failed to create lead");
+      console.error("Error creating opportunity:", error);
+      toast.error("Failed to create opportunity");
       return null;
     }
   }
 
-  async update(id, leadData) {
+  async update(id, opportunityData) {
     try {
       // Only include updateable fields for update operation
       const updateableFields = {
         Id: parseInt(id),
-        ...leadData
+        ...opportunityData
       };
 
       // Remove system and readonly fields
@@ -244,15 +231,15 @@ class LeadService {
         }
 
         if (successfulUpdates.length > 0) {
-          toast.success("Lead updated successfully");
+          toast.success("Opportunity updated successfully");
           return successfulUpdates[0].data;
         }
       }
 
       return null;
     } catch (error) {
-      console.error("Error updating lead:", error);
-      toast.error("Failed to update lead");
+      console.error("Error updating opportunity:", error);
+      toast.error("Failed to update opportunity");
       return null;
     }
   }
@@ -283,92 +270,50 @@ class LeadService {
         }
 
         if (successfulDeletions.length > 0) {
-          toast.success("Lead deleted successfully");
+          toast.success("Opportunity deleted successfully");
           return true;
         }
       }
 
       return false;
     } catch (error) {
-      console.error("Error deleting lead:", error);
-      toast.error("Failed to delete lead");
+      console.error("Error deleting opportunity:", error);
+      toast.error("Failed to delete opportunity");
       return false;
     }
   }
 
-  async getByStatus(status) {
-    try {
-      const filters = { status };
-      const result = await this.getAll(filters);
-      return result.data;
-    } catch (error) {
-      console.error("Error fetching leads by status:", error);
-      return [];
-    }
-  }
-
-  async updateStatus(id, status) {
-    try {
-      return await this.update(id, { status });
-    } catch (error) {
-      console.error("Error updating lead status:", error);
-      return null;
-    }
-  }
-
-  // Get leads for dashboard metrics
   async getDashboardMetrics() {
     try {
       await delay(200);
       
-      const allLeads = await this.getAll({ limit: 1000 });
-      const leads = allLeads.data;
+      const allOpportunities = await this.getAll({ limit: 1000 });
+      const opportunities = allOpportunities.data;
       
-      const total = leads.length;
-      const newLeads = leads.filter(lead => lead.status === 'New').length;
-      const qualified = leads.filter(lead => lead.status === 'Qualified').length;
-      const won = leads.filter(lead => lead.status === 'Won').length;
+      const totalRevenue = opportunities
+        .filter(opp => opp.Stage === 'Closed Won')
+        .reduce((sum, opp) => sum + (opp.Amount || 0), 0);
+      
+      const pipelineValue = opportunities
+        .filter(opp => !['Closed Won', 'Closed Lost'].includes(opp.Stage))
+        .reduce((sum, opp) => sum + (opp.Amount || 0), 0);
       
       return {
-        total,
-        new: newLeads,
-        qualified,
-        won,
-        conversionRate: total > 0 ? Math.round((won / total) * 100) : 0
+        total: opportunities.length,
+        totalRevenue,
+        pipelineValue,
+        averageDealSize: opportunities.length > 0 ? Math.round(totalRevenue / opportunities.length) : 0
       };
     } catch (error) {
-      console.error("Error fetching dashboard metrics:", error);
+      console.error("Error fetching opportunity metrics:", error);
       return {
         total: 0,
-        new: 0,
-        qualified: 0,
-        won: 0,
-        conversionRate: 0
+        totalRevenue: 0,
+        pipelineValue: 0,
+        averageDealSize: 0
       };
     }
   }
-
-  // Get leads with upcoming follow-ups
-  async getUpcomingFollowUps() {
-    try {
-      await delay(200);
-      const today = new Date();
-      const nextWeek = new Date();
-      nextWeek.setDate(today.getDate() + 7);
-      
-      const allLeads = await this.getAll({ limit: 1000 });
-      const leads = allLeads.data;
-      
-      return leads.filter(lead => {
-        if (!lead.follow_up_date) return false;
-        const followUpDate = new Date(lead.follow_up_date);
-        return followUpDate >= today && followUpDate <= nextWeek;
-      });
-    } catch (error) {
-      console.error("Error fetching upcoming follow-ups:", error);
-      return [];
-    }
-}
 }
 
-export default new LeadService();
+export default new OpportunityService();

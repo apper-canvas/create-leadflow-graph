@@ -1,22 +1,16 @@
-import React from 'react';
-import HomePage from '@/components/pages/HomePage';
-import DashboardPage from '@/components/pages/DashboardPage';
-import LeadsPage from '@/components/pages/LeadsPage';
-import PipelinePage from '@/components/pages/PipelinePage';
-import AddLeadPage from '@/components/pages/AddLeadPage';
-import NotFoundPage from '@/components/pages/NotFoundPage';
+import { useSelector } from 'react-redux';
+import { Navigate, useLocation } from 'react-router-dom';
 
-export const routes = [
-  {
-    path: '/',
-    component: HomePage,
-    title: 'Home',
-    showInNav: true,
-    icon: 'Home'
-  },
-  {
-    path: '/dashboard',
-    component: DashboardPage,
-    title: 'Dashboard',
-    showInNav: true,
-  },
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useSelector((state) => state.user);
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    // Redirect to login with the current path as redirect parameter
+    return <Navigate to={`/login?redirect=${location.pathname}${location.search}`} replace />;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;

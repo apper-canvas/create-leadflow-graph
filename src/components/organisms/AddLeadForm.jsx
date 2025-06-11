@@ -1,187 +1,281 @@
 import React, { useState } from 'react';
+import { Save, X } from 'lucide-react';
+import Button from '../atoms/Button';
+import Input from '../atoms/Input';
+import Select from '../atoms/Select';
+import TextArea from '../atoms/TextArea';
+import FormField from '../molecules/FormField';
+import leadService from '../../services/api/leadService';
 import { toast } from 'react-toastify';
-import FormField from '@/components/molecules/FormField';
-import Button from '@/components/atoms/Button';
-import LoadingSpinner from '@/components/atoms/LoadingSpinner';
-import ApperIcon from '@/components/ApperIcon';
-import { STATUS_OPTIONS, SOURCE_OPTIONS } from '@/config/constants';
 
-const AddLeadForm = ({ initialData, teamMembers, onSubmit, onCancel, loading, isModal = false }) => {
-  const [formData, setFormData] = useState(initialData || {
-    name: '',
-    email: '',
-    phone: '',
-    company: '',
-    leadSource: '',
-    status: 'New',
-    assignedTo: '',
-    notes: ''
+const AddLeadForm = ({ onSubmit, onCancel, initialData = null }) => {
+  const [formData, setFormData] = useState({
+    Name: initialData?.Name || '',
+    email: initialData?.email || '',
+    phone: initialData?.phone || '',
+    company: initialData?.company || '',
+    lead_source: initialData?.lead_source || '',
+    status: initialData?.status || 'New',
+    assigned_to: initialData?.assigned_to || '',
+    notes: initialData?.notes || '',
+    follow_up_date: initialData?.follow_up_date || ''
   });
 
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Validation rules
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.Name.trim()) {
+      newErrors.Name = 'Name is required';
     }
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
     }
 
-    if (formData.phone && !/^[\+\-\s\(\)\d]+$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+    if (!formData.company.trim()) {
+      newErrors.company = 'Company is required';
+    }
+
+    if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
+      newErrors.phone = 'Phone number is invalid';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+  // Handle form input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
-  const handleSubmit = (e) => {
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validateForm()) {
-      toast.error('Please fix the errors below');
+      toast.error('Please fix the errors in the form');
       return;
     }
-    onSubmit(formData);
+
+    setLoading(true);
+    try {
+      let result;
+      if (initialData && initialData.Id) {
+        // Update existing lead
+        result = await leadService.update(initialData.Id, formData);
+      } else {
+        // Create new lead
+        result = await leadService.create(formData);
+      }
+      
+      if (result) {
+        // Call the onSubmit callback with result data
+        onSubmit(result);
+        
+        // Reset form if not editing
+        if (!initialData) {
+          setFormData({
+            Name: '',
+            email: '',
+            phone: '',
+            company: '',
+            lead_source: '',
+            status: 'New',
+            assigned_to: '',
+            notes: '',
+            follow_up_date: ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error saving lead:', error);
+      toast.error('Failed to save lead');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Form field options
+  const statusOptions = [
+    { value: 'New', label: 'New' },
+    { value: 'Contacted', label: 'Contacted' },
+    { value: 'Qualified', label: 'Qualified' },
+    { value: 'Won', label: 'Won' },
+    { value: 'Lost', label: 'Lost' }
+  ];
+
+  const sourceOptions = [
+    { value: '', label: 'Select Source' },
+    { value: 'Website', label: 'Website' },
+    { value: 'Referral', label: 'Referral' },
+    { value: 'Social Media', label: 'Social Media' },
+    { value: 'Email Campaign', label: 'Email Campaign' },
+    { value: 'Cold Call', label: 'Cold Call' },
+    { value: 'Trade Show', label: 'Trade Show' },
+    { value: 'Other', label: 'Other' }
+  ];
+
+  const assigneeOptions = [
+    { value: '', label: 'Unassigned' },
+    { value: '1', label: 'John Doe' },
+    { value: '2', label: 'Jane Smith' },
+    { value: '3', label: 'Mike Johnson' },
+    { value: '4', label: 'Sarah Wilson' }
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Personal Information */}
-      <div className="space-y-4">
-        {!isModal && (
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-            Contact Information
-          </h2>
-        )}
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label="Full Name"
-            id="name"
-            value={formData.name}
-            onChange={(val) => handleInputChange('name', val)}
-            error={errors.name}
+      {/* Basic Information */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          label="Name"
+          required
+          error={errors.Name}
+        >
+          <Input
+            type="text"
+            name="Name"
+            value={formData.Name}
+            onChange={handleChange}
+            placeholder="Enter lead name"
             required
           />
-          <FormField
-            label="Email Address"
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(val) => handleInputChange('email', val)}
-            error={errors.email}
-            required
-          />
-        </div>
+        </FormField>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label="Phone Number"
-            id="phone"
+        <FormField
+          label="Email"
+          required
+          error={errors.email}
+        >
+          <Input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter email address"
+            required
+          />
+        </FormField>
+
+        <FormField
+          label="Phone"
+          error={errors.phone}
+        >
+          <Input
             type="tel"
+            name="phone"
             value={formData.phone}
-            onChange={(val) => handleInputChange('phone', val)}
-            error={errors.phone}
+            onChange={handleChange}
+            placeholder="Enter phone number"
           />
-          <FormField
-            label="Company"
-            id="company"
+        </FormField>
+
+        <FormField
+          label="Company"
+          required
+          error={errors.company}
+        >
+          <Input
+            type="text"
+            name="company"
             value={formData.company}
-            onChange={(val) => handleInputChange('company', val)}
+            onChange={handleChange}
+            placeholder="Enter company name"
+            required
           />
-        </div>
+        </FormField>
       </div>
 
       {/* Lead Details */}
-      <div className="space-y-4">
-        {!isModal && (
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-            Lead Details
-          </h2>
-        )}
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label="Lead Source"
-            id="leadSource"
-            type="select"
-            value={formData.leadSource}
-            onChange={(val) => handleInputChange('leadSource', val)}
-            options={[{ value: '', label: 'Select source...' }, ...SOURCE_OPTIONS.map(s => ({ value: s, label: s }))]}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <FormField label="Lead Source">
+          <Select
+            name="lead_source"
+            value={formData.lead_source}
+            onChange={handleChange}
+            options={sourceOptions}
           />
-          <FormField
-            label="Initial Status"
-            id="status"
-            type="select"
+        </FormField>
+
+        <FormField label="Status">
+          <Select
+            name="status"
             value={formData.status}
-            onChange={(val) => handleInputChange('status', val)}
-            options={STATUS_OPTIONS}
+            onChange={handleChange}
+            options={statusOptions}
           />
-        </div>
+        </FormField>
 
-        <FormField
-          label="Assign To"
-          id="assignedTo"
-          type="select"
-          value={formData.assignedTo}
-          onChange={(val) => handleInputChange('assignedTo', val)}
-          options={[{ value: '', label: 'Leave unassigned' }, ...teamMembers.map(member => ({ value: member.id, label: member.name }))]}
-        />
-
-        <FormField
-          label="Notes"
-          id="notes"
-          type="textarea"
-          rows={4}
-          value={formData.notes}
-          onChange={(val) => handleInputChange('notes', val)}
-        />
+        <FormField label="Assigned To">
+          <Select
+            name="assigned_to"
+            value={formData.assigned_to}
+            onChange={handleChange}
+            options={assigneeOptions}
+          />
+        </FormField>
       </div>
 
-      {/* Action Buttons */}
-      <div className={`flex ${isModal ? 'space-x-3' : 'flex-col sm:flex-row gap-3'} pt-6 border-t border-gray-200`}>
+      {/* Follow-up Date */}
+      <FormField label="Follow-up Date">
+        <Input
+          type="date"
+          name="follow_up_date"
+          value={formData.follow_up_date}
+          onChange={handleChange}
+        />
+      </FormField>
+
+      {/* Notes */}
+      <FormField label="Notes">
+        <TextArea
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          placeholder="Add any additional notes about this lead..."
+          rows={4}
+        />
+      </FormField>
+
+      {/* Form Actions */}
+      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+        )}
         <Button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           type="submit"
           disabled={loading}
-          className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+          className="inline-flex items-center"
         >
-          {loading ? (
-            <>
-              <LoadingSpinner className="w-4 h-4 border-white" />
-              <span>Creating Lead...</span>
-            </>
-          ) : (
-            <>
-              <ApperIcon name="Plus" className="w-4 h-4" />
-              <span>Create Lead</span>
-            </>
-          )}
-        </Button>
-        
-        <Button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="button"
-          onClick={onCancel}
-          className="flex-1 px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Cancel
+          <Save className="w-4 h-4 mr-2" />
+          {loading ? 'Saving...' : (initialData ? 'Update Lead' : 'Create Lead')}
         </Button>
       </div>
     </form>

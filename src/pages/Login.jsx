@@ -18,17 +18,17 @@ function Login() {
   }, [isInitialized]);
   
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-50">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="w-full max-w-md space-y-8 p-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-surface-800">Welcome Back</h1>
-          <p className="mt-2 text-surface-600">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-slate-800">Welcome Back</h1>
+          <p className="mt-2 text-slate-600">Sign in to your account</p>
         </div>
         <div id="authentication" className="min-h-[400px]" />
         <div className="text-center mt-4">
-          <p className="text-sm text-surface-600">
+          <p className="text-sm text-slate-600">
             Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-primary hover:text-primary/80">
+            <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
               Sign up
             </Link>
           </p>

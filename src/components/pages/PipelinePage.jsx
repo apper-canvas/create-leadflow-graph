@@ -1,132 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { Filter, Plus } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import Button from '../atoms/Button';
+import Select from '../atoms/Select';
+import LoadingSpinner from '../atoms/LoadingSpinner';
+import PipelineBoard from '../organisms/PipelineBoard';
+import AddLeadModal from '../organisms/AddLeadModal';
+import leadService from '../../services/api/leadService';
 import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Button from '@/components/atoms/Button';
-import PipelineSummaryStats from '@/components/organisms/PipelineSummaryStats';
-import PipelineBoard from '@/components/organisms/PipelineBoard';
-import { leadService, teamMemberService } from '@/services';
 
-function PipelinePage() {
+const PipelinePage = () => {
   const [leads, setLeads] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const { user } = useSelector((state) => state.user);
+  const [filters, setFilters] = useState({
+    assigned_to: '',
+    source: ''
+  });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
+  // Load leads data
+  const loadLeads = async () => {
     try {
-      const [leadsResult, teamResult] = await Promise.all([
-        leadService.getAll(),
-        teamMemberService.getAll()
-      ]);
-      setLeads(leadsResult);
-      setTeamMembers(teamResult);
+      setLoading(true);
+      const response = await leadService.getAll({ 
+        limit: 100, // Get more leads for pipeline view
+        ...filters 
+      });
+      setLeads(response.data || []);
+      setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to load pipeline data');
+      setError('Failed to load pipeline data');
+      console.error('Error loading pipeline:', err);
       toast.error('Failed to load pipeline data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateLeadStatus = async (leadId, newStatus) => {
-    try {
-      const updateData = { 
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-        followUpDate: newStatus === 'Contacted' ? 
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
-      };
-      
-      await leadService.update(leadId, updateData);
-      setLeads(prev => prev.map(lead => 
-        lead.id === leadId ? { ...lead, ...updateData } : lead
-      ));
-      toast.success(`Lead moved to ${newStatus}`);
-    } catch (err) {
-      toast.error('Failed to update lead status');
-    }
+  // Effect to load leads when filters change
+  useEffect(() => {
+    loadLeads();
+  }, [filters]);
+
+  // Handle filter changes
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
-  const totalLeads = leads.length;
-  const wonDealsCount = leads.filter(lead => lead.status === 'Won').length;
+  // Handle lead creation
+  const handleLeadCreated = () => {
+    setShowAddModal(false);
+    loadLeads(); // Refresh the pipeline
+  };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="space-y-4">
-                <div className="h-12 bg-gray-200 rounded-lg"></div>
-                {[...Array(3)].map((_, j) => (
-                  <div key={j} className="h-32 bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
-            ))}
-          </div>
+  // Handle lead status update
+  const handleLeadStatusUpdate = () => {
+    loadLeads(); // Refresh the pipeline
+  };
+
+  const assigneeOptions = [
+    { value: '', label: 'All Assignees' },
+    { value: '1', label: 'John Doe' },
+    { value: '2', label: 'Jane Smith' },
+    { value: '3', label: 'Mike Johnson' }
+  ];
+
+  const sourceOptions = [
+    { value: '', label: 'All Sources' },
+    { value: 'Website', label: 'Website' },
+    { value: 'Referral', label: 'Referral' },
+    { value: 'Social Media', label: 'Social Media' },
+    { value: 'Email Campaign', label: 'Email Campaign' }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Sales Pipeline</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Track leads through your sales process
+          </p>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 text-center">
-        <div className="max-w-md mx-auto">
-          <ApperIcon name="AlertCircle" className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Pipeline</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button
-            onClick={loadData}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+        <div className="mt-4 sm:mt-0">
+          <Button 
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center"
           >
-            Try Again
+            <Plus className="w-4 h-4 mr-2" />
+            Add Lead
           </Button>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="p-6 max-w-full overflow-hidden">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Sales Pipeline</h1>
-        <p className="text-gray-600 mt-1">Track leads through your sales process</p>
-        
-        <PipelineSummaryStats totalLeads={totalLeads} wonDealsCount={wonDealsCount} />
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="flex items-center">
+            <Filter className="w-4 h-4 mr-2 text-gray-400" />
+            <span className="text-sm text-gray-600 mr-4">Filter by:</span>
+          </div>
+          <Select
+            value={filters.assigned_to}
+            onChange={(e) => handleFilterChange('assigned_to', e.target.value)}
+            options={assigneeOptions}
+            className="min-w-[150px]"
+          />
+          <Select
+            value={filters.source}
+            onChange={(e) => handleFilterChange('source', e.target.value)}
+            options={sourceOptions}
+            className="min-w-[150px]"
+          />
+        </div>
       </div>
 
-      <PipelineBoard leads={leads} teamMembers={teamMembers} onUpdateLeadStatus={handleUpdateLeadStatus} />
-
-      {/* Drag Instructions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="mt-8 bg-primary/5 rounded-lg p-4"
-      >
-        <div className="flex items-center space-x-3">
-          <ApperIcon name="MousePointer" className="w-5 h-5 text-primary" />
-          <div>
-            <h3 className="text-sm font-medium text-gray-900">Pipeline Management</h3>
-            <p className="text-sm text-gray-600">
-              Drag and drop leads between columns to update their status. 
-              Changes are automatically saved.
-            </p>
-          </div>
+      {/* Pipeline Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
-      </motion.div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={loadLeads} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      ) : (
+        <PipelineBoard 
+          leads={leads}
+          onLeadUpdate={handleLeadStatusUpdate}
+        />
+      )}
+
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <AddLeadModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onLeadCreated={handleLeadCreated}
+        />
+      )}
     </div>
-  );
-}
+);
+};
 
 export default PipelinePage;

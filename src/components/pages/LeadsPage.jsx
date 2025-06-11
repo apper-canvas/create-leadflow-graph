@@ -1,176 +1,190 @@
 import React, { useState, useEffect } from 'react';
+import { Plus, Search, Filter } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import Button from '../atoms/Button';
+import Input from '../atoms/Input';
+import Select from '../atoms/Select';
+import LoadingSpinner from '../atoms/LoadingSpinner';
+import LeadsTable from '../organisms/LeadsTable';
+import AddLeadModal from '../organisms/AddLeadModal';
+import PaginationControls from '../molecules/PaginationControls';
+import leadService from '../../services/api/leadService';
 import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Button from '@/components/atoms/Button';
-import LeadsTable from '@/components/organisms/LeadsTable';
-import AddLeadModal from '@/components/organisms/AddLeadModal';
-import { leadService, teamMemberService } from '@/services';
 
-function LeadsPage() {
+const LeadsPage = () => {
   const [leads, setLeads] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { user } = useSelector((state) => state.user);
+  
+  // Filter and pagination state
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    assigned_to: '',
+    page: 1,
+    limit: 10
+  });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 0,
+    currentPage: 1
+  });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
+  // Load leads data
+  const loadLeads = async () => {
     try {
-      const [leadsResult, teamResult] = await Promise.all([
-        leadService.getAll(),
-        teamMemberService.getAll()
-      ]);
-      setLeads(leadsResult);
-      setTeamMembers(teamResult);
+      setLoading(true);
+      const response = await leadService.getAll(filters);
+      setLeads(response.data || []);
+      setPagination({
+        total: response.total || 0,
+        totalPages: response.totalPages || 0,
+        currentPage: response.page || 1
+      });
+      setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to load data');
-      toast.error('Failed to load leads data');
+      setError('Failed to load leads');
+      console.error('Error loading leads:', err);
+      toast.error('Failed to load leads');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateLead = async (newLeadData) => {
-    try {
-      const leadData = {
-        ...newLeadData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        followUpDate: newLeadData.status === 'Contacted' ? 
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
-      };
-      
-      const created = await leadService.create(leadData);
-      setLeads(prev => [created, ...prev]);
-      setShowAddModal(false);
-      toast.success('Lead created successfully');
-    } catch (err) {
-      toast.error('Failed to create lead');
-    }
+  // Effect to load leads when filters change
+  useEffect(() => {
+    loadLeads();
+  }, [filters]);
+
+  // Handle filter changes
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value,
+      page: 1 // Reset to first page when filtering
+    }));
   };
 
-  const handleUpdateStatus = async (leadId, newStatus) => {
-    try {
-      const updateData = { 
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-        followUpDate: newStatus === 'Contacted' ? 
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
-      };
-      
-      await leadService.update(leadId, updateData);
-      setLeads(prev => prev.map(lead => 
-        lead.id === leadId ? { ...lead, ...updateData } : lead
-      ));
-      toast.success('Lead status updated');
-    } catch (err) {
-      toast.error('Failed to update lead status');
-    }
+  // Handle pagination
+  const handlePageChange = (page) => {
+    setFilters(prev => ({ ...prev, page }));
   };
 
-  const handleAssignLead = async (leadId, assigneeId) => {
-    try {
-      const updateData = { 
-        assignedTo: assigneeId,
-        updatedAt: new Date().toISOString()
-      };
-      
-      await leadService.update(leadId, updateData);
-      setLeads(prev => prev.map(lead => 
-        lead.id === leadId ? { ...lead, ...updateData } : lead
-      ));
-      toast.success('Lead assigned successfully');
-    } catch (err) {
-      toast.error('Failed to assign lead');
-    }
+  // Handle lead creation
+  const handleLeadCreated = () => {
+    setShowAddModal(false);
+    loadLeads(); // Refresh the list
   };
 
-  const handleDeleteLead = async (leadId) => {
-    if (!window.confirm('Are you sure you want to delete this lead?')) return;
-    
-    try {
-      await leadService.delete(leadId);
-      setLeads(prev => prev.filter(lead => lead.id !== leadId));
-      toast.success('Lead deleted successfully');
-    } catch (err) {
-      toast.error('Failed to delete lead');
-    }
+  // Handle lead update
+  const handleLeadUpdated = () => {
+    loadLeads(); // Refresh the list
   };
 
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
+  // Handle lead deletion
+  const handleLeadDeleted = () => {
+    loadLeads(); // Refresh the list
+  };
+
+  const statusOptions = [
+    { value: '', label: 'All Status' },
+    { value: 'New', label: 'New' },
+    { value: 'Contacted', label: 'Contacted' },
+    { value: 'Qualified', label: 'Qualified' },
+    { value: 'Won', label: 'Won' },
+    { value: 'Lost', label: 'Lost' }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage and track all your leads in one place
+          </p>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 text-center">
-        <div className="max-w-md mx-auto">
-          <ApperIcon name="AlertCircle" className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Leads</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button
-            onClick={loadData}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+        <div className="mt-4 sm:mt-0">
+          <Button 
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center"
           >
-            Try Again
+            <Plus className="w-4 h-4 mr-2" />
+            Add Lead
           </Button>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="p-6 max-w-full overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Lead Management</h2>
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          <ApperIcon name="Plus" className="w-4 h-4" />
-          <span>Add Lead</span>
-        </Button>
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search leads..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select
+            value={filters.status}
+            onChange={(e) => handleFilterChange('status', e.target.value)}
+            options={statusOptions}
+          />
+          <div className="flex items-center">
+            <Filter className="w-4 h-4 mr-2 text-gray-400" />
+            <span className="text-sm text-gray-600">
+              {pagination.total} total leads
+            </span>
+          </div>
+        </div>
       </div>
 
-      <LeadsTable
-        leads={leads}
-        teamMembers={teamMembers}
-        onUpdateStatus={handleUpdateStatus}
-        onAssignLead={handleAssignLead}
-        onDeleteLead={handleDeleteLead}
-        onAddLeadClick={() => setShowAddModal(true)}
-      />
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={loadLeads} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      ) : (
+        <>
+          <LeadsTable 
+            leads={leads}
+            onUpdate={handleLeadUpdated}
+            onDelete={handleLeadDeleted}
+          />
+          
+          {pagination.totalPages > 1 && (
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
+      )}
 
-      <AddLeadModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        teamMembers={teamMembers}
-        onLeadCreated={handleCreateLead}
-      />
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <AddLeadModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onLeadCreated={handleLeadCreated}
+        />
+      )}
     </div>
-  );
-}
+);
+};
 
 export default LeadsPage;
