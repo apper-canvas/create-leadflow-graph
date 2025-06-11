@@ -35,15 +35,21 @@ function AppContent() {
   const userState = useSelector((state) => state.user);
   const isAuthenticated = userState?.isAuthenticated || false;
   
-  // Initialize ApperUI once when the app loads
+// Initialize ApperUI once when the app loads
   useEffect(() => {
+    // Check if ApperSDK is available
+    if (!window.ApperSDK) {
+      console.error("ApperSDK not available");
+      setIsInitialized(true); // Allow app to render even without SDK
+      return;
+    }
+
     const { ApperClient, ApperUI } = window.ApperSDK;
     
     const client = new ApperClient({
       apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
-    
     // Initialize but don't show login yet
     ApperUI.setup(client, {
       target: '#authentication',
@@ -52,9 +58,9 @@ function AppContent() {
       onSuccess: function (user) {
         setIsInitialized(true);
         // CRITICAL: This exact currentPath logic must be preserved in all implementations
-        // DO NOT simplify or modify this pattern as it ensures proper redirection flow
+// DO NOT simplify or modify this pattern as it ensures proper redirection flow
         let currentPath = window.location.pathname + window.location.search;
-        let redirectPath = new URLSearchParams(window.location.search).get('redirect');
+        let redirectPath = new window.URLSearchParams(window.location.search).get('redirect');
         const isAuthPage = currentPath.includes('/login') || currentPath.includes('/signup') || 
                            currentPath.includes('/callback') || currentPath.includes('/error');
         
@@ -101,9 +107,9 @@ function AppContent() {
       },
       onError: function(error) {
         console.error("Authentication failed:", error);
-      }
+}
     });
-  }, []);
+  }, [navigate, dispatch]);
   
   // Authentication methods to share via context
   const authMethods = {
@@ -194,7 +200,7 @@ function App() {
         <AppContent />
       </Router>
     </Provider>
-);
+  );
 }
 
 export default App;

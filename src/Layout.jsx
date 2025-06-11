@@ -2,12 +2,12 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { AuthContext } from './App';
-import { Outlet, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ApperIcon from './components/ApperIcon';
 import { routeArray } from './config/routes';
 
-function Layout() {
+function Layout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -88,10 +88,10 @@ function Layout() {
         )}
       </header>
 
-      {/* Main Content */}
+{/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <main className="h-full overflow-y-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
