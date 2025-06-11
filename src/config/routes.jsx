@@ -13,4 +13,32 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Navigation routes configuration
+export const routeArray = [
+  {
+    id: 'dashboard',
+    path: '/dashboard',
+    label: 'Dashboard',
+    icon: 'BarChart3'
+  },
+  {
+    id: 'leads',
+    path: '/leads',
+    label: 'Leads',
+    icon: 'Users'
+  },
+  {
+    id: 'addLead',
+    path: '/add-lead',
+    label: 'Add Lead',
+    icon: 'UserPlus'
+  },
+  {
+    id: 'pipeline',
+    path: '/pipeline',
+    label: 'Pipeline',
+    icon: 'GitBranch'
+  }
+];
+
 export default ProtectedRoute;
